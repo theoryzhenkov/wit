@@ -38,6 +38,14 @@ components, and authors shouldn't hand-write component tags anyway.
   sync and the migration script need write).
 - Migration consequence: component-using MDX converts mechanically
   (JSX → directives); only pages with genuine inline logic stay repo-managed.
+- **Sync is one-directional** (follow-up question: should manual UI manifests
+  sync back into wit.config?): no — code → data by extraction, never
+  data → code by sync. wit.config is developer-owned source; a CLI mutating it
+  is the two-way-sync tar pit. Manual manifests are *design-first*
+  components — authorable immediately (forms, usage indexing, fallback
+  rendering), drift-warned until implemented; the explicit reverse is codegen
+  (`wit components scaffold <name>`, v1.x), which the developer runs and
+  commits. Recorded as platform MUST `sync-one-way`.
 
 ## 2026-08-22 — v1 interview: scope, structure, API
 
