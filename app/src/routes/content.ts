@@ -137,6 +137,9 @@ async function fenceChangeForRead(change: Change): Promise<Change> {
 // spec: docs/platform/L1-platform#sse-feed
 content.get("/:vaultId/events", async (c) => {
   const principal = c.get("principal");
+  // Reverse proxies must pass events through unbuffered.
+  c.header("X-Accel-Buffering", "no");
+  c.header("Cache-Control", "no-cache");
   return streamSSE(c, async (stream) => {
     let alive = true;
     let wake: (() => void) | null = null;
