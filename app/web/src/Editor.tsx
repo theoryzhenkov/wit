@@ -9,6 +9,7 @@ import { yCollab } from "y-codemirror.next";
 import { api, type DocSummary, type Manifest } from "./api";
 import { analyzeDirectives, type Diagnostic } from "./diagnostics";
 import { witCompletions } from "./editor-extensions";
+import { markdownStyling } from "./editor-style";
 import { ListRow } from "./kit";
 
 // CodeMirror + Yjs over the relay: collaborative markdown, frontmatter as
@@ -83,6 +84,7 @@ export function Editor({
           history(),
           keymap.of([...defaultKeymap, ...historyKeymap]),
           markdown(),
+          ...markdownStyling,
           EditorView.lineWrapping,
           placeholder("Write — [[ links, / components, frontmatter up top…"),
           witCompletions(() => allDocsRef.current, () => manifestsRef.current),

@@ -14,8 +14,11 @@
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.11.0",
     "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.9",
+    "@lezer/highlight": "^1.2.3",
+    "@theoryzhenkov/wit-client": "workspace:*",
     "better-auth": "^1.6.30",
     "codemirror": "^6.0.2",
     "drizzle-orm": "^0.45.2",
@@ -34,8 +37,7 @@
     "y-protocols": "^1.0.7",
     "y-websocket": "^3.1.0",
     "yaml": "^2.9.0",
-    "yjs": "^13.6.32",
-    "@theoryzhenkov/wit-client": "workspace:*"
+    "yjs": "^13.6.32"
   },
   "devDependencies": {
     "@storybook/react-vite": "^10.5.10",
