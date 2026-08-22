@@ -31,11 +31,13 @@ alternatives so they are not relitigated by accident.
   (`path=eq` vs listings). Edges/usages are fenced by *source* doc
   visibility: a public doc's outgoing links are already in its body, a
   private doc's existence never leaves the API.
-- **SSE feed emits ids to every principal** (including read keys, and
-  for private docs): ids are opaque invalidation tokens, and a doc going
-  private *must* invalidate consumer caches to honor
-  `private-never-served` on the subsequent refetch. Noted as a
-  deliberate reading of that assertion.
+- **SSE feed is visibility-fenced for read keys** (revised same day
+  after review): private ids never appear even as invalidation hints;
+  the change event still fires — possibly with empty `ids` — so
+  consumer caches always drop, and a doc going private still
+  invalidates. Full ids go to members and write keys only. (Supersedes
+  the initial ids-to-every-principal reading, which leaked private doc
+  UUIDs and edit timing to read keys.)
 - **Membership pagination is an offset cursor** into the algebra-defined
   order (pins, then rule matches) — keyset doesn't compose across the
   pin/rule seam; collections are curated views with bounded size.
