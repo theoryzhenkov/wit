@@ -154,7 +154,16 @@ export class WitClient {
     if (cached) headers["If-None-Match"] = cached.etag;
 
     const res = await this.fetchImpl(url, { headers });
-    if (res.status === 304 && cached) return JSON.parse(cached.body) as T;
+    if (res.status === 304) {
+      if (cached) return JSON.parse(cached.body) as T;
+      // 304 without a cache entry (evicted mid-flight): refetch clean.
+      this.cache.delete(url);
+      const retry = await this.fetchImpl(url, {
+        headers: this.opts.key ? { Authorization: `Bearer ${this.opts.key}` } : {},
+      });
+      if (!retry.ok) throw new WitError(retry.status, `wit: ${retry.status}`);
+      return (await retry.json()) as T;
+    }
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       throw new WitError(res.status, body?.error ?? `wit: ${res.status}`);
@@ -343,35 +352,45 @@ export class WitClient {
   ): () => void {
     const controller = new AbortController();
     void (async () => {
-      try {
-        const headers: Record<string, string> = { Accept: "text/event-stream" };
-        if (this.opts.key) headers["Authorization"] = `Bearer ${this.opts.key}`;
-        const res = await this.fetchImpl(
-          `${this.opts.baseUrl}/api/content/${this.opts.vaultId}/events`,
-          { headers, signal: controller.signal },
-        );
-        if (!res.ok || !res.body) throw new WitError(res.status, "sse connect failed");
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        for (;;) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          let idx;
-          while ((idx = buffer.indexOf("\n\n")) !== -1) {
-            const frame = buffer.slice(0, idx);
-            buffer = buffer.slice(idx + 2);
-            const event = frame.match(/^event: (.+)$/m)?.[1];
-            const data = frame.match(/^data: (.+)$/m)?.[1];
-            if (event === "change" && data) {
-              this.invalidate();
-              onChange(JSON.parse(data) as Change);
+      let backoffMs = 1000;
+      // Reconnect loop: proxies idle-close SSE streams routinely; a clean
+      // stream end must not silently downgrade liveness to polling.
+      while (!controller.signal.aborted) {
+        try {
+          const headers: Record<string, string> = { Accept: "text/event-stream" };
+          if (this.opts.key) headers["Authorization"] = `Bearer ${this.opts.key}`;
+          const res = await this.fetchImpl(
+            `${this.opts.baseUrl}/api/content/${this.opts.vaultId}/events`,
+            { headers, signal: controller.signal },
+          );
+          if (!res.ok || !res.body) throw new WitError(res.status, "sse connect failed");
+          backoffMs = 1000;
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          for (;;) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let idx;
+            while ((idx = buffer.indexOf("\n\n")) !== -1) {
+              const frame = buffer.slice(0, idx);
+              buffer = buffer.slice(idx + 2);
+              const event = frame.match(/^event: (.+)$/m)?.[1];
+              const data = frame.match(/^data: (.+)$/m)?.[1];
+              if (event === "change" && data) {
+                this.invalidate();
+                onChange(JSON.parse(data) as Change);
+              }
             }
           }
+        } catch (e) {
+          if (controller.signal.aborted) return;
+          onError?.(e);
         }
-      } catch (e) {
-        if (!controller.signal.aborted) onError?.(e);
+        if (controller.signal.aborted) return;
+        await new Promise((r) => setTimeout(r, backoffMs));
+        backoffMs = Math.min(backoffMs * 2, 30_000);
       }
     })();
     return () => controller.abort();
