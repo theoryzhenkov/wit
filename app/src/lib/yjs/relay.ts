@@ -8,7 +8,7 @@ import { auth } from "../auth";
 import { getMembership } from "../../routes/guard";
 import { getDoc } from "../store/docs";
 import { saveDocFromYDoc } from "../save";
-import { appendUpdate, loadDocState } from "./store";
+import { appendUpdate, loadDocState, TEXT_KEY } from "./store";
 
 // The Yjs relay: y-protocols sync + awareness over Bun's native
 // websockets, in the same process as the REST API.
@@ -47,60 +47,74 @@ async function getRoom(docId: string): Promise<Room> {
   const pending = loading.get(docId);
   if (pending) return pending;
 
-  const load = (async () => {
-    const ydoc = new Y.Doc();
-    const state = await loadDocState(docId);
-    if (state) Y.applyUpdate(ydoc, state, "load");
-    const awareness = new awarenessProtocol.Awareness(ydoc);
-    awareness.setLocalState(null);
-    const room: Room = { ydoc, awareness, conns: new Map(), saveTimer: null, persisting: Promise.resolve() };
+  const load = loadRoom(docId);
+  // finally, not success-path cleanup: a failed load must not leave a
+  // rejected promise poisoning every future connection to this doc.
+  const tracked = load.finally(() => loading.delete(docId));
+  loading.set(docId, tracked);
+  return tracked;
+}
 
-    ydoc.on("update", (update: Uint8Array, origin: unknown) => {
-      if (origin === "load") return;
-      room.persisting = room.persisting
-        .then(() => appendUpdate(docId, update))
-        .catch((e) => console.error(`persist failed for doc ${docId}:`, e));
+/** Character cap enforced at the CRDT layer: an oversized doc state is
+ *  truncated in a transaction that propagates to all clients.
+ *  spec: docs/platform/L1-platform#input-caps */
+const MAX_DOC_CHARS = 1_000_000;
+const CAP_ORIGIN = "size-cap";
+
+async function loadRoom(docId: string): Promise<Room> {
+  const ydoc = new Y.Doc();
+  const state = await loadDocState(docId);
+  if (state) Y.applyUpdate(ydoc, state, "load");
+  const awareness = new awarenessProtocol.Awareness(ydoc);
+  awareness.setLocalState(null);
+  const room: Room = { ydoc, awareness, conns: new Map(), saveTimer: null, persisting: Promise.resolve() };
+
+  ydoc.on("update", (update: Uint8Array, origin: unknown) => {
+    if (origin === "load") return;
+    const ytext = ydoc.getText(TEXT_KEY);
+    if (origin !== CAP_ORIGIN && ytext.length > MAX_DOC_CHARS) {
+      ydoc.transact(() => ytext.delete(MAX_DOC_CHARS, ytext.length - MAX_DOC_CHARS), CAP_ORIGIN);
+    }
+    room.persisting = room.persisting
+      .then(() => appendUpdate(docId, update))
+      .catch((e) => console.error(`persist failed for doc ${docId}:`, e));
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, MESSAGE_SYNC);
+    syncProtocol.writeUpdate(encoder, update);
+    const message = encoding.toUint8Array(encoder);
+    for (const conn of room.conns.keys()) {
+      if (conn !== origin) conn.send(message);
+    }
+    scheduleSave(docId, room);
+  });
+
+  awareness.on(
+    "update",
+    (
+      { added, updated, removed }: { added: number[]; updated: number[]; removed: number[] },
+      origin: unknown,
+    ) => {
+      const changed = [...added, ...updated, ...removed];
+      const ids = room.conns.get(origin as Conn);
+      if (ids) {
+        for (const id of added) ids.add(id);
+        for (const id of removed) ids.delete(id);
+      }
       const encoder = encoding.createEncoder();
-      encoding.writeVarUint(encoder, MESSAGE_SYNC);
-      syncProtocol.writeUpdate(encoder, update);
+      encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
+      encoding.writeVarUint8Array(
+        encoder,
+        awarenessProtocol.encodeAwarenessUpdate(awareness, changed),
+      );
       const message = encoding.toUint8Array(encoder);
       for (const conn of room.conns.keys()) {
         if (conn !== origin) conn.send(message);
       }
-      scheduleSave(docId, room);
-    });
+    },
+  );
 
-    awareness.on(
-      "update",
-      (
-        { added, updated, removed }: { added: number[]; updated: number[]; removed: number[] },
-        origin: unknown,
-      ) => {
-        const changed = [...added, ...updated, ...removed];
-        const ids = room.conns.get(origin as Conn);
-        if (ids) {
-          for (const id of added) ids.add(id);
-          for (const id of removed) ids.delete(id);
-        }
-        const encoder = encoding.createEncoder();
-        encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
-        encoding.writeVarUint8Array(
-          encoder,
-          awarenessProtocol.encodeAwarenessUpdate(awareness, changed),
-        );
-        const message = encoding.toUint8Array(encoder);
-        for (const conn of room.conns.keys()) {
-          if (conn !== origin) conn.send(message);
-        }
-      },
-    );
-
-    rooms.set(docId, room);
-    loading.delete(docId);
-    return room;
-  })();
-  loading.set(docId, load);
-  return load;
+  rooms.set(docId, room);
+  return room;
 }
 
 function scheduleSave(docId: string, room: Room): void {

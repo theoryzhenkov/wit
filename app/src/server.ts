@@ -16,6 +16,6 @@ export function startServer(port: number) {
       if (upgrade !== null) return upgrade;
       return app.fetch(req);
     },
-    websocket: relayWebsocket,
+    websocket: { ...relayWebsocket, maxPayloadLength: 2_000_000 },
   });
 }
