@@ -4,3 +4,4 @@ dist/
 .env
 .env.*
 app/dist/
+app/storybook-static/
