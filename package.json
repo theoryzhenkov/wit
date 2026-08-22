@@ -3,7 +3,7 @@
   "private": true,
   "workspaces": ["app", "packages/*"],
   "scripts": {
-    "typecheck": "bun run --cwd app typecheck",
+    "typecheck": "bun run --cwd app typecheck && bun run --cwd packages/client typecheck && bun run --cwd packages/cli typecheck && bun run --cwd packages/astro typecheck",
     "test": "bun test",
     "dev": "bun run --cwd app dev"
   }
