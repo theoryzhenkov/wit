@@ -12,6 +12,31 @@ depends:
 Interview log. Append dated entries when a decision is made; record rejected
 alternatives so they are not relitigated by accident.
 
+## 2026-08-22 — P1 implementation decisions (doc core)
+
+Interpretations made while implementing the model spec, recorded so the
+code and spec stay aligned:
+
+- **Relations are wikilink-valued frontmatter keys.** Any frontmatter
+  entry whose value is exactly one wikilink (or a list of them) produces
+  typed edges with `rel` = the key; `title`/`tags` are structural and
+  excluded. No fixed relation vocabulary — data-driven, Obsidian-compatible.
+- **Redirects participate in link resolution.** A new link written against
+  a renamed slug resolves through the redirect to the doc UUID at save
+  time (the spec's "the old slug resolves to the doc" applied to saves,
+  not only reads). A live doc always shadows a redirect: creating or
+  renaming onto a redirected slug deletes the redirect (live doc wins).
+- **Deleting a doc reverts incoming edges to dangling** (FK `set null`,
+  target slug retained) — symmetric with auto-resolve, so a recreated doc
+  reclaims its backlinks.
+- **Generated slugs suffix on collision** (`name-2`, `name-3`, …);
+  explicitly requested slugs error instead — the caller asked for that
+  address, silently moving it would lie.
+- **Yjs storage is an append-only update log** compacted past a threshold
+  (and on demand), merged with `Y.mergeUpdates`; the save pipeline
+  (derive text → parse → resolve → replace edges/usages) runs debounced
+  ~300 ms after relay idle and on last-disconnect.
+
 ## 2026-08-22 — registry is sync-owned: manual UI manifests removed
 
 Supersedes parts of the two entries below. Since every component requires a
