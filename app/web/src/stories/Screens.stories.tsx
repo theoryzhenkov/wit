@@ -19,8 +19,8 @@ const Sidebar = () => (
   <nav className="sidebar" style={{ height: "100%" }}>
     <header>
       <span className="wordmark" style={{ fontSize: 15 }}>wit</span>
-      <span style={{ color: "var(--muted)", fontSize: "var(--text-sm)" }}>theornet ⚙</span>
-      <Button variant="ghost" size="sm">+</Button>
+      <div style={{ flex: 1 }} />
+      <Button variant="ghost" size="sm" title="new doc">+</Button>
     </header>
     <div className="search"><Input placeholder="search…" style={{ width: "100%" }} /></div>
     <div className="section"><span>recent</span></div>
@@ -42,8 +42,27 @@ const Sidebar = () => (
       <ListRow title="reading" meta="7" />
       <ListRow title="stubs" meta="12" />
     </div>
-    <div style={{ padding: "0 var(--s2) var(--s3)", marginTop: "var(--s2)" }}>
+    <div style={{ padding: "0 var(--s2)", marginTop: "var(--s2)" }}>
       <ListRow title="All docs" meta="26" />
+    </div>
+    {/* Obsidian-style footer: vault switcher left, settings right. */}
+    <div
+      style={{
+        marginTop: "auto",
+        borderTop: "1px solid var(--line-soft)",
+        padding: "var(--s2) var(--s3)",
+        display: "flex",
+        alignItems: "center",
+        gap: "var(--s2)",
+      }}
+    >
+      <span
+        style={{ flex: 1, display: "inline-flex", alignItems: "center", gap: 6, color: "var(--muted)", fontSize: "var(--text-sm)", cursor: "pointer" }}
+        title="switch vault"
+      >
+        <span style={{ color: "var(--faint)" }}>⇅</span> theornet
+      </span>
+      <Button variant="ghost" size="sm" title="vault settings">⚙</Button>
     </div>
   </nav>
 );
