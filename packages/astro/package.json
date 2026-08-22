@@ -1,19 +1,33 @@
 {
-  "name": "@wit/astro",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@theoryzhenkov/wit-astro",
+  "version": "0.1.1",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "bun build src/index.ts --target=node --outdir dist && tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@wit/client": "workspace:*"
+    "@theoryzhenkov/wit-client": "^0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.9.0",
     "@types/bun": "^1.3.14"
-  }
+  },
+  "description": "Astro loader and SSR stale-while-revalidate adapter for wit",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theoryzhenkov/wit.git",
+    "directory": "packages/astro"
+  },
+  "files": [
+    "dist",
+    "src"
+  ]
 }

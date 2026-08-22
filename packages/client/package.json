@@ -1,16 +1,30 @@
 {
-  "name": "@wit/client",
+  "name": "@theoryzhenkov/wit-client",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "bun build src/index.ts --target=node --outdir dist && tsc -p tsconfig.build.json"
   },
   "devDependencies": {
     "typescript": "^5.9.0",
     "@types/bun": "^1.3.14"
-  }
+  },
+  "description": "Typed client for the wit content grammar \u2014 docs, collections, edges, search, backlinks, graph, export, SSE",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theoryzhenkov/wit.git",
+    "directory": "packages/client"
+  },
+  "files": [
+    "dist",
+    "src"
+  ]
 }

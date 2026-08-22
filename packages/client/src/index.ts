@@ -1,4 +1,4 @@
-// @wit/client — typed helpers over wit's content grammar. Everything
+// @theoryzhenkov/wit-client — typed helpers over wit's content grammar. Everything
 // here (graph, backlinks, search, export) composes grammar queries
 // client-side; there are no capability endpoints to call.
 // spec: docs/platform/L1-platform#sdk-client-side

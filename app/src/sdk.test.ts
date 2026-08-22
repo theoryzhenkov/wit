@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll, afterAll } from "bun:test";
-import { createClient, type Change } from "@wit/client";
+import { createClient, type Change } from "@theoryzhenkov/wit-client";
 import { fixtures, ensureMigrated } from "./lib/test-db";
 import { app } from "./app";
 import { signUpViaMagicLink } from "./lib/test-auth";
@@ -7,7 +7,7 @@ import { createDoc, setVisibility, writeDocText, type DocRow } from "./lib/store
 import { createCollection, setItem } from "./lib/store/collections";
 import { startServer } from "./server";
 
-// @wit/client against the real server: every helper is a composition of
+// @theoryzhenkov/wit-client against the real server: every helper is a composition of
 // grammar calls — this suite is the sdk-client-side proof.
 // spec: docs/platform/L1-platform#sdk-client-side
 
@@ -69,7 +69,7 @@ function client() {
   });
 }
 
-describe("@wit/client", () => {
+describe("@theoryzhenkov/wit-client", () => {
   it("fetches a doc with raw markdown body", async () => {
     const doc = await client().doc("garden-hub");
     expect(doc?.title).toBe("The Hub");

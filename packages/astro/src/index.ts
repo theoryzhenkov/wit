@@ -4,13 +4,13 @@ import {
   type Doc,
   type MemberEntry,
   type WitClientOptions,
-} from "@wit/client";
+} from "@theoryzhenkov/wit-client";
 
-// @wit/astro — content-as-a-service behind your own design. Two shapes:
+// @theoryzhenkov/wit-astro — content-as-a-service behind your own design. Two shapes:
 //
 // 1. witLoader(): an Astro content-collection Loader (build-time /
 //    dev-refresh), structurally typed so this package needs no astro dep.
-// 2. WitSsr: a stale-while-revalidate cache over @wit/client for SSR
+// 2. WitSsr: a stale-while-revalidate cache over @theoryzhenkov/wit-client for SSR
 //    routes, invalidated by the vault's SSE feed. This is the path by
 //    which an editor save reaches a consuming SSR site.
 //    spec: docs/platform/L1-platform#sse-feed
