@@ -9,19 +9,21 @@ import {
   writeDocText,
   MAX_DOC_BYTES,
 } from "../lib/store/docs";
-import { requireMembership, requireSession, type GuardEnv } from "./guard";
+import { requireWrite, withPrincipal, type PrincipalEnv } from "./principal";
 
 // Doc management for the editor and the API door. Mounted at
-// /api/vaults/:vaultId/docs — everything here is membership-guarded.
+// /api/vaults/:vaultId/docs — member session or write key throughout
+// (write keys have full vault content access, read keys none here).
+// spec: docs/platform/L1-platform#api-key-scope
 
 const VISIBILITIES = new Set(["private", "unlisted", "public"]);
 
-export const docs = new Hono<GuardEnv>();
+export const docs = new Hono<PrincipalEnv>();
 
-docs.use("*", requireSession, requireMembership);
+docs.use("*", withPrincipal, requireWrite);
 
 docs.get("/", async (c) => {
-  return c.json(await listDocs(c.get("membership").vaultId));
+  return c.json(await listDocs(c.get("principal").vaultId));
 });
 
 docs.post("/", async (c) => {
@@ -31,7 +33,7 @@ docs.post("/", async (c) => {
     title: typeof body?.title === "string" ? body.title : undefined,
     text: typeof body?.text === "string" ? body.text : undefined,
   };
-  const result = await createDoc(c.get("membership").vaultId, input);
+  const result = await createDoc(c.get("principal").vaultId, input);
   if ("error" in result) {
     const status = result.error === "doc-too-large" ? 413 : 409;
     return c.json({ error: result.error, maxBytes: MAX_DOC_BYTES }, status);
@@ -41,13 +43,13 @@ docs.post("/", async (c) => {
 });
 
 docs.get("/:docId", async (c) => {
-  const doc = await getDoc(c.get("membership").vaultId, c.req.param("docId"));
+  const doc = await getDoc(c.get("principal").vaultId, c.req.param("docId"));
   if (!doc) return c.json({ error: "not found" }, 404);
   return c.json(doc);
 });
 
 docs.patch("/:docId", async (c) => {
-  const vaultId = c.get("membership").vaultId;
+  const vaultId = c.get("principal").vaultId;
   const doc = await getDoc(vaultId, c.req.param("docId"));
   if (!doc) return c.json({ error: "not found" }, 404);
   const body = await c.req.json().catch(() => null);
@@ -71,7 +73,7 @@ docs.patch("/:docId", async (c) => {
 });
 
 docs.delete("/:docId", async (c) => {
-  const doc = await getDoc(c.get("membership").vaultId, c.req.param("docId"));
+  const doc = await getDoc(c.get("principal").vaultId, c.req.param("docId"));
   if (!doc) return c.json({ error: "not found" }, 404);
   await deleteDoc(doc.id);
   return c.json({ ok: true });
