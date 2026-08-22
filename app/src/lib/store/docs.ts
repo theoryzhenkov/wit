@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import * as Y from "yjs";
+import { emitChange } from "../bus";
 import { db, schema } from "../db";
 import { slugify } from "../parse";
 import { claimDanglingEdges, runSavePipeline } from "../save";
@@ -102,6 +103,7 @@ export async function renameDoc(
     throw e;
   }
   await slugBecameLive(doc.vaultId, newSlug, doc.id);
+  emitChange(doc.vaultId, "docs", [doc.id]);
   return { slug: newSlug };
 }
 
@@ -158,15 +160,21 @@ export async function listDocs(vaultId: string) {
 export async function deleteDoc(docId: string): Promise<void> {
   // Cascades take updates, outgoing edges, usages, and redirects; incoming
   // edges revert to dangling (FK set null). spec: docs/model/L1-model#link-dangling
-  await db.delete(schema.docs).where(eq(schema.docs.id, docId));
+  const [gone] = await db
+    .delete(schema.docs)
+    .where(eq(schema.docs.id, docId))
+    .returning({ vaultId: schema.docs.vaultId });
+  if (gone) emitChange(gone.vaultId, "docs", [docId]);
 }
 
 export async function setVisibility(
   docId: string,
   visibility: "private" | "unlisted" | "public",
 ): Promise<void> {
-  await db
+  const [row] = await db
     .update(schema.docs)
     .set({ visibility, updatedAt: new Date() })
-    .where(eq(schema.docs.id, docId));
+    .where(eq(schema.docs.id, docId))
+    .returning({ vaultId: schema.docs.vaultId });
+  if (row) emitChange(row.vaultId, "docs", [docId]);
 }

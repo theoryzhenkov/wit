@@ -9,13 +9,14 @@ const MAX_NAME_LENGTH = 200;
 
 export const vaults = new Hono<GuardEnv>();
 
-vaults.use("*", requireSession);
+// Per-route guards: a `use("*")` here would swallow the deeper
+// /api/vaults/:vaultId/* mounts (registry, assets) that key-auth instead.
 
-vaults.get("/", async (c) => {
+vaults.get("/", requireSession, async (c) => {
   return c.json(await listVaults(c.get("user").id));
 });
 
-vaults.post("/", async (c) => {
+vaults.post("/", requireSession, async (c) => {
   const body = await c.req.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   if (!name || name.length > MAX_NAME_LENGTH) {

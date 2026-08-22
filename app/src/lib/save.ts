@@ -1,4 +1,5 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import { emitChange } from "./bus";
 import { db, schema } from "./db";
 import { parseDoc } from "./parse";
 import { deriveText, loadYDoc } from "./yjs/store";
@@ -84,6 +85,12 @@ export async function runSavePipeline(doc: DocCoords, text: string): Promise<voi
     await tx.delete(schema.componentUsages).where(eq(schema.componentUsages.docId, doc.id));
     if (usageRows.length > 0) await tx.insert(schema.componentUsages).values(usageRows);
   });
+
+  // After commit: consumers drop caches and refetch.
+  // spec: docs/platform/L1-platform#sse-feed
+  emitChange(doc.vaultId, "docs", [doc.id]);
+  emitChange(doc.vaultId, "edges", [doc.id]);
+  emitChange(doc.vaultId, "usages", [doc.id]);
 }
 
 /** Full save from CRDT state: the relay's and API door's common path.
@@ -106,7 +113,7 @@ export async function claimDanglingEdges(
   slug: string,
   docId: string,
 ): Promise<void> {
-  await db
+  const claimed = await db
     .update(schema.edges)
     .set({ targetDocId: docId })
     .where(
@@ -115,5 +122,11 @@ export async function claimDanglingEdges(
         eq(schema.edges.targetSlug, slug),
         isNull(schema.edges.targetDocId),
       ),
-    );
+    )
+    .returning({ sourceDocId: schema.edges.sourceDocId });
+  emitChange(
+    vaultId,
+    "edges",
+    [...new Set(claimed.map((e) => e.sourceDocId))],
+  );
 }
