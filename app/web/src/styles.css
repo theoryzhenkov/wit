@@ -65,9 +65,11 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft
 
 .shell {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 240px 1fr;
   height: 100vh;
 }
+.shell[data-collapsed="true"] { grid-template-columns: 1fr; }
+.main .empty { display: flex; align-items: center; gap: 4px; }
 
 .sidebar {
   border-right: 1px solid var(--line);
