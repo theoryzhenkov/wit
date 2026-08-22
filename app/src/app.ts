@@ -28,3 +28,18 @@ app.route("/api/vaults/:vaultId/assets", assets);
 // The content API: seven nouns, one grammar, GETs with strong ETags.
 // spec: docs/platform/L1-platform#grammar-nouns
 app.route("/api/content", content);
+
+// The editor SPA (vite build output), served from the same process.
+// spec: docs/platform/L1-platform#one-process
+const WEB_ROOT = new URL("../dist/web/", import.meta.url).pathname;
+
+app.get("*", async (c) => {
+  if (c.req.path.startsWith("/api/")) return c.json({ error: "not found" }, 404);
+  const rel = c.req.path.replace(/^\/+/, "");
+  if (rel.split("/").some((s) => s === "..")) return c.json({ error: "not found" }, 404);
+  const file = Bun.file(WEB_ROOT + (rel || "index.html"));
+  if (await file.exists()) return new Response(file);
+  const index = Bun.file(WEB_ROOT + "index.html");
+  if (await index.exists()) return new Response(index, { headers: { "Content-Type": "text/html" } });
+  return c.text("wit api is up; the editor is not built (bun run build)", 200);
+});

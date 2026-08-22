@@ -31,6 +31,7 @@ jobs:
       - run: bun test
         env:
           DATABASE_URL: postgres://wit:wit@localhost:5432/wit
+      - run: bun run --cwd app build
 
   nix:
     runs-on: ubuntu-latest
