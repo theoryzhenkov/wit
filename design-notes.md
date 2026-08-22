@@ -12,6 +12,33 @@ depends:
 Interview log. Append dated entries when a decision is made; record rejected
 alternatives so they are not relitigated by accident.
 
+## 2026-08-22 — components: directives, registry, sync
+
+Raised post-interview: theor.net's files are .mdx with custom Astro
+components, and authors shouldn't hand-write component tags anyway.
+
+- **Rejected storing MDX** — code-in-content: renderable only by a JS
+  toolchain, unsafe to execute for multi-user (forecloses the P2 hosted
+  face), hand-authored. Adopted **markdown directives** (CommonMark
+  extension): a component use is data (name + attrs + slot), portable, inert,
+  Obsidian-degradable. Law recorded as model MUST `content-is-data`.
+- **Registry + schema-driven forms in v1** (Portable Text lineage): vault
+  manifests (name, props schema, slots); editor slash-menu generates forms
+  from schemas; nobody hand-types directives unless they want to.
+- **Sync design**: the adapter's `wit.config` component map (directive name →
+  implementation) is the single source for render-binding AND `wit components
+  sync`, which TS-introspects only mapped components. Opt-in by construction;
+  drift warnings both directions. Manual manifests plus overlays on synced
+  ones (overlays survive re-sync). Rejected: sweeping the components folder
+  (junk manifests, exposes internals), annotation markers (second declaration
+  to maintain).
+- **Amendments**: grammar grows 5 → 7 nouns (+components, +usages — usage
+  index makes prop-breaking refactors enumerable); API keys gain scopes
+  read | write (read-only-keys rule was written for site consumption; CLI
+  sync and the migration script need write).
+- Migration consequence: component-using MDX converts mechanically
+  (JSX → directives); only pages with genuine inline logic stay repo-managed.
+
 ## 2026-08-22 — v1 interview: scope, structure, API
 
 Five-round interview producing the v1 specs (docs/model, docs/platform,

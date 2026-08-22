@@ -22,19 +22,27 @@ proof is the dogfood cutover of theor.net.
 - Yjs CRDT docs, web editor at the **comfortable** tier: doc list,
   CodeMirror + Yjs markdown editing, create/rename/delete, visibility toggle,
   collections UI (create, pin, order, edit rules), search, drag-drop image
-  upload. Frontmatter edited as raw text in the document.
-- Content API (query grammar), SSE + ETag liveness, vault-scoped API keys.
-- `@wit/client` SDK + Astro adapter.
+  upload, and component insert/edit via schema-driven forms (slash-menu from
+  the registry). Frontmatter edited as raw text in the document.
+- Component system: markdown directives as the invocation format, vault
+  component registry (synced + manual manifests with overlays), the
+  `wit components sync` CLI, and the directive usage index.
+- Content API (query grammar over seven nouns), SSE + ETag liveness,
+  vault-scoped API keys (read | write).
+- `@wit/client` SDK + Astro adapter (markdown + directive→component
+  rendering).
 - Basic asset uploads (disk-backed object storage).
-- One-off migration script (via the API door) to seed theor.net's garden
-  content — a dogfood script, not a product feature.
+- One-off migration script (via the API door, write key) to seed theor.net's
+  garden content, converting component JSX to directives — a dogfood script,
+  not a product feature. Pages with genuine inline logic stay repo-managed.
 
 ## Out of scope (v1.x and later)
 
 - Vault/file-sync daemon and Obsidian plugin (v1.x, first follow-up).
-- Collection nesting; per-collection slugs; rendered-HTML endpoint; MDX docs;
-  consumer webhooks; GraphQL facade; frontmatter form UI; graph view in the
-  editor; version-history UI.
+- Collection nesting; per-collection slugs; rendered-HTML endpoint; consumer
+  webhooks; GraphQL facade; frontmatter form UI; graph view in the editor;
+  version-history UI. (MDX storage is out permanently, not deferred —
+  directives are the component format; see docs/model/L1-model#content-is-data.)
 - Hosted-garden face (P2 platform rung); commons/thingspace (P3).
 
 ## Acceptance

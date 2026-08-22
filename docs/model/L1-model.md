@@ -83,6 +83,28 @@ over this table, never stored redundantly.
 | edge-typed       | MUST | Frontmatter relations produce typed edges distinct from body wikilinks   |
 | backlinks-derived | MUST | Backlinks are derived from the edge table on read                       |
 
+## Components & directives
+
+**Content is data, never code.** Component invocations in doc bodies are
+markdown directives (`::name{attrs}` leaf, `:::name` container with a markdown
+slot, `:name[text]{attrs}` inline — the CommonMark directives extension). MDX
+is never stored; implementations live in consuming sites, bound to directive
+names by the site's adapter map. Each vault holds a registry of component
+**manifests** — name, props schema, slot expectations — created by CLI
+extraction from site components (`source: sync`) or by hand in the editor
+(`source: manual`); hand overlays (labels, docs, ordering) on synced manifests
+survive re-syncs. Directive usages are parsed on save into a derived index.
+
+### Assertions
+
+| ID                    | Sev.   | Assertion                                                          |
+| --------------------- | ------ | ------------------------------------------------------------------ |
+| content-is-data       | MUST   | Doc bodies contain no executable code; component invocations are directives (name + attributes + slot); MDX is never stored |
+| registry-manifests    | MUST   | Component manifests are vault-scoped data (name, props schema, slots), with `source` sync or manual |
+| manifest-overlay      | MUST   | Hand overlays on synced manifests survive subsequent syncs; sync owns only the extracted base |
+| usage-index           | MUST   | Directive usages (doc, component name, props) are derived on save and queryable |
+| directive-diagnostics | SHOULD | Unknown directives and missing required props produce advisory diagnostics, never save failures |
+
 ## Visibility
 
 Per-doc, three tiers, private by default: `private` (members only), `unlisted`

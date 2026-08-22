@@ -28,30 +28,36 @@ service). Exit: a user can sign up and create a vault.
 
 Yjs relay (websocket) + update persistence + snapshot compaction; save
 pipeline: derive markdown text → parse frontmatter/tags → resolve links →
-upsert edges; slug normalization + uniqueness + rename redirects. Exit: docs
-round-trip through Yjs with all derived indexes correct (model assertions
-covered by tests).
+upsert edges → parse directives → upsert usages; slug normalization +
+uniqueness + rename redirects. Exit: docs round-trip through Yjs with all
+derived indexes correct (model assertions covered by tests).
 
 ## P2 — collections & content API
 
 Collection algebra (rule ∪ pins − excludes, ordering); the query grammar over
-the five nouns with filters/fts/includes/order/cursors; ETags; per-vault SSE
-feed; API keys with visibility enforcement. Exit: platform grammar assertions
-covered; a public doc is readable by key, a private one provably is not.
+the seven nouns with filters/fts/includes/order/cursors; ETags; per-vault SSE
+feed; scoped API keys (read | write) with visibility enforcement; component
+registry CRUD (manifests, overlays). Exit: platform grammar assertions
+covered; a public doc is readable by a read key, a private one provably is
+not; a write key can manage the registry.
 
 ## P3 — editor
 
 Vite/React SPA at the comfortable tier: doc list, CodeMirror + Yjs editing,
 create/rename/delete, visibility toggle, collections UI, search, drag-drop
-uploads. Exit: daily-drivable for real writing.
+uploads, component slash-menu with schema-driven insert/edit forms, manifest
+management UI (manual manifests + overlays), directive diagnostics. Exit:
+daily-drivable for real writing, components included.
 
 ## P4 — SDK, adapter, cutover
 
 `@wit/client` typed helpers; Astro adapter (SSR fetch + SSE invalidation +
-stale-while-revalidate); migration script seeding theor.net's garden
-collections; theor.net garden routes flip to SSR-from-wit; delete the site's
-derivation scripts. Exit: product acceptance assertions accept-cutover,
-accept-live, accept-derived.
+stale-while-revalidate + directive→component rendering from the wit.config
+map); `wit components sync` CLI (TS Props introspection); migration script
+seeding theor.net's garden collections with JSX→directive conversion;
+theor.net garden routes flip to SSR-from-wit; delete the site's derivation
+scripts. Exit: product acceptance assertions accept-cutover, accept-live,
+accept-derived.
 
 ## P5 — hardening & deploy
 
