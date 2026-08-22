@@ -24,6 +24,7 @@
     "drizzle-orm": "^0.45.2",
     "hono": "^4.9.0",
     "lib0": "^0.2.117",
+    "lucide-react": "^1.33.0",
     "mdast-util-to-string": "^4.0.0",
     "postgres": "^3.4.9",
     "react": "^19.2.8",

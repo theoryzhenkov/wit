@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { EditorView, keymap, placeholder } from "@codemirror/view";
@@ -6,11 +6,12 @@ import { EditorState } from "@codemirror/state";
 import { markdown } from "@codemirror/lang-markdown";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { yCollab } from "y-codemirror.next";
-import { api, type DocSummary, type Manifest } from "./api";
+import { api, type Collection, type DocSummary, type Manifest } from "./api";
 import { analyzeDirectives, type Diagnostic } from "./diagnostics";
 import { witCompletions } from "./editor-extensions";
 import { markdownStyling } from "./editor-style";
-import { ListRow } from "./kit";
+import { ChevronDown, Ellipsis } from "lucide-react";
+import { Button, ListRow, Menu, useToast } from "./kit";
 
 // CodeMirror + Yjs over the relay: collaborative markdown, frontmatter as
 // raw text in the document (comfortable tier).
@@ -18,18 +19,22 @@ import { ListRow } from "./kit";
 export function Editor({
   vaultId,
   doc,
+  collections = [],
   onChanged,
   onDeleted,
 }: {
   vaultId: string;
   doc: DocSummary;
+  collections?: Collection[];
   onChanged: () => Promise<void> | void;
   onDeleted: () => void;
 }) {
+  const toast = useToast();
   const host = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const [slug, setSlug] = useState(doc.slug);
   const [peers, setPeers] = useState(0);
+  const [visMenu, setVisMenu] = useState<{ x: number; y: number } | null>(null);
+  const [moreMenu, setMoreMenu] = useState<{ x: number; y: number } | null>(null);
   const [manifests, setManifests] = useState<Manifest[]>([]);
   const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -128,8 +133,6 @@ export function Editor({
     }
   };
 
-  const visibilityOptions = useMemo(() => ["private", "unlisted", "public"] as const, []);
-
   return (
     <div
       className="editor-wrap"
@@ -146,51 +149,76 @@ export function Editor({
       }}
     >
       <div className="doc-toolbar">
-        <input
-          className="slug-input"
-          value={slug}
-          onChange={(e) => setSlug(e.target.value)}
-          onBlur={async () => {
-            if (slug === doc.slug) return;
-            try {
-              setError("");
-              const updated = await api.docs.patch(vaultId, doc.id, { slug });
-              setSlug(updated.slug);
-              await onChanged();
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "rename failed");
-              setSlug(doc.slug);
-            }
-          }}
-          title="slug — renames leave a redirect"
-        />
-        <select
-          value={doc.visibility}
-          onChange={async (e) => {
-            await api.docs.patch(vaultId, doc.id, { visibility: e.target.value });
-            await onChanged();
-          }}
-          title="visibility"
-        >
-          {visibilityOptions.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </select>
+        <span style={{ fontSize: "var(--text-sm)", color: "var(--muted)" }}>
+          {collections[0] ? (
+            <>
+              <a href={`#/vault/${vaultId}/collection/${encodeURIComponent(collections[0].slug)}`} style={{ color: "inherit", textDecoration: "none" }}>
+                {collections[0].name || collections[0].slug}
+              </a>{" "}
+              <span style={{ color: "var(--faint)" }}>/</span>{" "}
+            </>
+          ) : null}
+          <span style={{ color: "var(--ink)" }}>{doc.title || doc.slug}</span>
+          {peers > 0 && <span style={{ color: "var(--faint)" }}> · {peers} here</span>}
+        </span>
         <div className="spacer" />
-        {peers > 0 && <span className="peers">{peers} other editor{peers > 1 ? "s" : ""}</span>}
         {error && <span className="error-line">{error}</span>}
-        <button
-          className="danger ghost"
-          onClick={async () => {
-            if (!confirm(`Delete "${doc.title || doc.slug}"?`)) return;
-            await api.docs.remove(vaultId, doc.id);
-            onDeleted();
-          }}
-        >
-          delete
-        </button>
+        <Button size="sm" variant="ghost" onClick={(e) => setVisMenu({ x: e.clientX - 80, y: 44 })}>
+          <span className={`vis-dot vis-${doc.visibility}`} /> {doc.visibility} <ChevronDown size={12} style={{ color: "var(--faint)" }} />
+        </Button>
+        <Button size="sm" variant="ghost" title="doc actions" onClick={(e) => setMoreMenu({ x: e.clientX - 140, y: 44 })}>
+          <Ellipsis size={14} />
+        </Button>
+        {visMenu && (
+          <Menu
+            at={visMenu}
+            onClose={() => setVisMenu(null)}
+            items={(["private", "unlisted", "public"] as const).map((v) => ({
+              label: (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span className={`vis-dot vis-${v}`} /> {v}
+                </span>
+              ),
+              onSelect: async () => {
+                await api.docs.patch(vaultId, doc.id, { visibility: v });
+                await onChanged();
+                if (v === "public") toast("Published — live in about a second");
+              },
+            }))}
+          />
+        )}
+        {moreMenu && (
+          <Menu
+            at={moreMenu}
+            onClose={() => setMoreMenu(null)}
+            items={[
+              {
+                label: `slug: ${doc.slug}`,
+                onSelect: async () => {
+                  const next = prompt("slug (renames leave a redirect):", doc.slug);
+                  if (!next || next === doc.slug) return;
+                  try {
+                    await api.docs.patch(vaultId, doc.id, { slug: next });
+                    await onChanged();
+                    toast(`Renamed — /${next}`);
+                  } catch (e) {
+                    toast(e instanceof Error ? e.message : "rename failed", "danger");
+                  }
+                },
+              },
+              "sep",
+              {
+                label: "Delete doc",
+                danger: true,
+                onSelect: async () => {
+                  if (!confirm(`Delete "${doc.title || doc.slug}"?`)) return;
+                  await api.docs.remove(vaultId, doc.id);
+                  onDeleted();
+                },
+              },
+            ]}
+          />
+        )}
       </div>
       {/* Clicks on the empty pane focus the editor: the whole pane IS
           the input, not just the rendered first line. */}
