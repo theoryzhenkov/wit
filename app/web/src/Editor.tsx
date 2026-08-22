@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
-import { EditorView, keymap } from "@codemirror/view";
+import { EditorView, keymap, placeholder } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { markdown } from "@codemirror/lang-markdown";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -75,6 +75,7 @@ export function Editor({
           keymap.of([...defaultKeymap, ...historyKeymap]),
           markdown(),
           EditorView.lineWrapping,
+          placeholder("Write markdown — [[wikilinks]], ::components, frontmatter up top…"),
           yCollab(ytext, provider.awareness),
         ],
       }),
@@ -195,7 +196,20 @@ export function Editor({
           delete
         </button>
       </div>
-      <div ref={host} style={{ flex: 1, minHeight: 0, overflow: "auto" }} />
+      {/* Clicks on the empty pane focus the editor: the whole pane IS
+          the input, not just the rendered first line. */}
+      <div
+        ref={host}
+        className="editor-host"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget && viewRef.current) {
+            e.preventDefault();
+            const view = viewRef.current;
+            view.dispatch({ selection: { anchor: view.state.doc.length } });
+            view.focus();
+          }
+        }}
+      />
       {diagnostics.length > 0 && (
         <div className="diagnostics">
           {diagnostics.map((d, i) => (

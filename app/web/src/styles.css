@@ -137,11 +137,21 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft
 .doc-toolbar .peers { color: var(--muted); font-size: 13px; }
 
 .editor-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.editor-wrap .cm-editor { flex: 1; }
-.editor-wrap .cm-editor.cm-focused { outline: none; }
+.editor-host {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  cursor: text;
+  background: var(--panel);
+}
+.editor-host .cm-editor { flex: 1; min-height: 100%; }
+.editor-host .cm-editor.cm-focused { outline: none; }
 .cm-editor { font-size: 15px; }
 .cm-content { font-family: ui-monospace, "SF Mono", Menlo, monospace; max-width: 74ch; padding: 20px; }
 .cm-editor .cm-line { line-height: 1.65; }
+.cm-placeholder { color: var(--muted); }
 
 .diagnostics {
   border-top: 1px solid var(--line);
