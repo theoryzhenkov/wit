@@ -40,26 +40,16 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - run: nix flake check
 
-  # Deploy = publish the image; tars (ops_atlas manifest app) auto-pulls
-  # ghcr :latest every 5 minutes (linker convention).
+  # Deploy = publish the image via the shared workflow (linker convention); its
+  # webhook step makes tars redeploy within seconds, with 30min polling as
+  # fallback.
   image:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: app
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/theoryzhenkov/wit/wit:latest
-            ghcr.io/theoryzhenkov/wit/wit:${{ github.sha }}
+    uses: theoryzhenkov/.github/.github/workflows/deploy-docker.yml@main
+    with:
+      app_name: wit
+    secrets: inherit
