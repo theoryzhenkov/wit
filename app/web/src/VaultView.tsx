@@ -3,6 +3,7 @@ import { api, type Collection, type DocSummary, type Vault } from "./api";
 import type { Route } from "./App";
 import { CollectionView } from "./CollectionView";
 import { Editor } from "./Editor";
+import { SettingsView } from "./SettingsView";
 
 export function VaultView({ vault, route }: { vault: Vault; route: Route }) {
   const [docs, setDocs] = useState<DocSummary[]>([]);
@@ -48,7 +49,13 @@ export function VaultView({ vault, route }: { vault: Vault; route: Route }) {
           <a href="#/" className="wordmark" style={{ textDecoration: "none", fontSize: 17 }}>
             wit
           </a>
-          <span style={{ color: "var(--muted)", fontSize: 13 }}>{vault.name}</span>
+          <a
+            href={`#/vault/${vault.id}/settings`}
+            style={{ color: "var(--muted)", fontSize: 13, textDecoration: "none" }}
+            title="vault settings — API keys, vault id"
+          >
+            {vault.name} ⚙
+          </a>
           <button
             className="ghost"
             title="new doc"
@@ -120,7 +127,9 @@ export function VaultView({ vault, route }: { vault: Vault; route: Route }) {
         </ul>
       </nav>
       <main className="main">
-        {activeDoc ? (
+        {route.settings ? (
+          <SettingsView vault={vault} />
+        ) : activeDoc ? (
           <Editor
             key={activeDoc.id}
             vaultId={vault.id}

@@ -10,15 +10,17 @@ export interface Route {
   vaultId: string | null;
   docId: string | null;
   collectionSlug: string | null;
+  settings: boolean;
 }
 
 function parseHash(): Route {
   const parts = window.location.hash.replace(/^#\/?/, "").split("/");
-  const route: Route = { vaultId: null, docId: null, collectionSlug: null };
+  const route: Route = { vaultId: null, docId: null, collectionSlug: null, settings: false };
   if (parts[0] === "vault" && parts[1]) {
     route.vaultId = parts[1];
     if (parts[2] === "doc" && parts[3]) route.docId = parts[3];
     if (parts[2] === "collection" && parts[3]) route.collectionSlug = decodeURIComponent(parts[3]);
+    if (parts[2] === "settings") route.settings = true;
   }
   return route;
 }

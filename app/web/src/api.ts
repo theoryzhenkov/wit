@@ -190,6 +190,23 @@ export const api = {
       ),
   },
 
+  keys: {
+    list: async (vaultId: string) =>
+      json<{ id: string; name: string; scope: string; createdAt: string; lastUsedAt: string | null }[]>(
+        await fetch(`/api/vaults/${vaultId}/keys`),
+      ),
+    create: async (vaultId: string, name: string, scope: "read" | "write") =>
+      json<{ id: string; token: string }>(
+        await fetch(`/api/vaults/${vaultId}/keys`, {
+          method: "POST",
+          headers: jsonHeaders,
+          body: JSON.stringify({ name, scope }),
+        }),
+      ),
+    remove: async (vaultId: string, keyId: string) =>
+      json(await fetch(`/api/vaults/${vaultId}/keys/${keyId}`, { method: "DELETE" })),
+  },
+
   components: {
     // The UI reads the registry, never writes it.
     // spec: docs/model/L1-model#registry-manifests
