@@ -32,3 +32,19 @@ First deployment: `wit.theor.net`, feeding the garden at theor.net.
 - [docs/product/L1-product.md](docs/product/L1-product.md) — v1 scope and acceptance bar
 - [EPH-PLAN-L1-v1.md](EPH-PLAN-L1-v1.md) — the six-phase build plan
 - [design-notes.md](design-notes.md) — dated log of design decisions and their rationale
+
+## Development
+
+One Bun workspace: the server + editor live in [app/](app/), SDK packages
+will land in `packages/*`. Toolchain via `nix develop`.
+
+```sh
+app/scripts/dev-db.sh start        # scratch Postgres on :5433, database "wit"
+export DATABASE_URL="$(app/scripts/dev-db.sh url)"
+bun install
+bun run dev                        # serve on :3000
+bun run typecheck && bun test      # the gates; tests default to the dev DB
+```
+
+Migrations are hand-written SQL in `app/drizzle/` (never `drizzle-kit push`)
+and applied at boot and by the test harness.

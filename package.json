@@ -1,0 +1,10 @@
+{
+  "name": "wit-root",
+  "private": true,
+  "workspaces": ["app", "packages/*"],
+  "scripts": {
+    "typecheck": "bun run --cwd app typecheck",
+    "test": "bun test",
+    "dev": "bun run --cwd app dev"
+  }
+}
