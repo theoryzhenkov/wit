@@ -1,0 +1,44 @@
+name: release
+
+# Publishes @theoryzhenkov/wit-client and wit-astro to npm via trusted
+# publishing (OIDC) whenever a package's version on main is ahead of the
+# registry. Release = bump the version in package.json, merge to main.
+# No tokens: npmjs.com trusts this repo+workflow identity directly.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - ".github/workflows/release.yml"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # the OIDC credential trusted publishing exchanges
+    strategy:
+      matrix:
+        package: [client, astro]
+      max-parallel: 1 # astro depends on client — publish in order
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # npm ≥ 11.5.1 for OIDC publish
+      - run: bun install --frozen-lockfile
+      - name: Publish if version is ahead of the registry
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          NAME=$(bun -e 'console.log(JSON.parse(await Bun.file("package.json").text()).name)')
+          LOCAL=$(bun -e 'console.log(JSON.parse(await Bun.file("package.json").text()).version)')
+          PUBLISHED=$(npm view "$NAME" version 2>/dev/null || echo "none")
+          echo "$NAME: local=$LOCAL published=$PUBLISHED"
+          if [ "$LOCAL" = "$PUBLISHED" ]; then
+            echo "up to date — skipping"
+            exit 0
+          fi
+          bun run build
+          npm publish --access public
