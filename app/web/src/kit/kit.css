@@ -11,8 +11,8 @@
 .k-btn:hover { background: var(--hover); }
 .k-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .k-btn:active { background: var(--active); }
-.k-btn[data-variant="primary"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-.k-btn[data-variant="primary"]:hover { opacity: 0.9; }
+.k-btn[data-variant="primary"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.k-btn[data-variant="primary"]:hover { background: var(--accent-hover); }
 .k-btn[data-variant="ghost"] { border-color: transparent; background: transparent; color: var(--muted); }
 .k-btn[data-variant="ghost"]:hover { background: var(--hover); color: var(--ink); }
 .k-btn[data-variant="danger"] { color: var(--danger); }

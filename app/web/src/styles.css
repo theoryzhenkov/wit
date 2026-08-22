@@ -28,7 +28,7 @@ button {
   cursor: pointer;
 }
 button:hover { border-color: var(--accent); }
-button.primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 button.danger { color: var(--danger); }
 button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
 button.ghost:hover { color: var(--ink); }
@@ -71,7 +71,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft
 
 .sidebar {
   border-right: 1px solid var(--line);
-  background: var(--panel);
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -106,7 +106,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft
   text-decoration: none;
   border-left: 2px solid transparent;
 }
-.sidebar li a:hover { background: var(--bg); }
+.sidebar li a:hover { background: var(--hover); }
 .sidebar li a.active { border-left-color: var(--accent); background: var(--accent-soft); }
 .sidebar li .slug { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -115,7 +115,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft
 .vis-unlisted { background: var(--status-unlisted); }
 .vis-public { background: var(--status-public); }
 
-.main { overflow-y: auto; display: flex; flex-direction: column; }
+.main { overflow-y: auto; display: flex; flex-direction: column; background: var(--panel); }
 .main .empty { margin: auto; color: var(--muted); }
 
 .doc-toolbar {
