@@ -207,6 +207,16 @@ export const api = {
       json(await fetch(`/api/vaults/${vaultId}/keys/${keyId}`, { method: "DELETE" })),
   },
 
+  edges: {
+    backlinks: async (vaultId: string, docId: string) => {
+      const params = new URLSearchParams({ target: `eq.${docId}`, limit: "100" });
+      const res = await fetch(`/api/content/${vaultId}/edges?${params}`);
+      return (
+        await json<{ items: { source: string; kind: string; rel: string | null }[] }>(res)
+      ).items;
+    },
+  },
+
   components: {
     // The UI reads the registry, never writes it.
     // spec: docs/model/L1-model#registry-manifests

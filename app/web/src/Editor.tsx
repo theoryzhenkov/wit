@@ -8,7 +8,8 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { yCollab } from "y-codemirror.next";
 import { api, type DocSummary, type Manifest } from "./api";
 import { analyzeDirectives, type Diagnostic } from "./diagnostics";
-import { ComponentMenu } from "./ComponentMenu";
+import { witCompletions } from "./editor-extensions";
+import { ListRow } from "./kit";
 
 // CodeMirror + Yjs over the relay: collaborative markdown, frontmatter as
 // raw text in the document (comfortable tier).
@@ -31,8 +32,16 @@ export function Editor({
   const [manifests, setManifests] = useState<Manifest[]>([]);
   const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
   const [dragging, setDragging] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [error, setError] = useState("");
+  const [allDocs, setAllDocs] = useState<DocSummary[]>([]);
+  const [backlinks, setBacklinks] = useState<{ source: string; kind: string; rel: string | null }[]>([]);
+
+  useEffect(() => {
+    void api.docs.list(vaultId).then(setAllDocs);
+    void api.edges.backlinks(vaultId, doc.id).then(setBacklinks).catch(() => {});
+  }, [vaultId, doc.id]);
+  const allDocsRef = useRef(allDocs);
+  allDocsRef.current = allDocs;
 
   // The registry feeds the insert menu; the UI never writes it.
   // spec: docs/model/L1-model#registry-manifests
@@ -75,7 +84,8 @@ export function Editor({
           keymap.of([...defaultKeymap, ...historyKeymap]),
           markdown(),
           EditorView.lineWrapping,
-          placeholder("Write markdown — [[wikilinks]], ::components, frontmatter up top…"),
+          placeholder("Write — [[ links, / components, frontmatter up top…"),
+          witCompletions(() => allDocsRef.current, () => manifestsRef.current),
           yCollab(ytext, provider.awareness),
         ],
       }),
@@ -166,22 +176,6 @@ export function Editor({
             </option>
           ))}
         </select>
-        <div style={{ position: "relative" }}>
-          <button onClick={() => setMenuOpen((o) => !o)} disabled={manifests.length === 0}
-            title={manifests.length === 0 ? "no components synced to this vault" : "insert component"}>
-            + component
-          </button>
-          {menuOpen && (
-            <ComponentMenu
-              manifests={manifests}
-              onInsert={(text) => {
-                insertAtCursor(text);
-                setMenuOpen(false);
-              }}
-              onClose={() => setMenuOpen(false)}
-            />
-          )}
-        </div>
         <div className="spacer" />
         {peers > 0 && <span className="peers">{peers} other editor{peers > 1 ? "s" : ""}</span>}
         {error && <span className="error-line">{error}</span>}
@@ -210,6 +204,24 @@ export function Editor({
           }
         }}
       />
+      {backlinks.length > 0 && (
+        <div style={{ borderTop: "1px solid var(--line-soft)", padding: "var(--s2) var(--s4) var(--s3)", background: "var(--panel)" }}>
+          <div style={{ font: "600 var(--text-xs) var(--font-ui)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.07em", margin: "4px 0" }}>
+            {backlinks.length} backlink{backlinks.length > 1 ? "s" : ""}
+          </div>
+          {backlinks.map((b, i) => {
+            const source = allDocs.find((d) => d.id === b.source);
+            return (
+              <ListRow
+                key={i}
+                href={`#/vault/${vaultId}/doc/${b.source}`}
+                title={source?.title || source?.slug || b.source}
+                meta={b.rel ?? b.kind}
+              />
+            );
+          })}
+        </div>
+      )}
       {diagnostics.length > 0 && (
         <div className="diagnostics">
           {diagnostics.map((d, i) => (
