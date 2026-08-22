@@ -74,25 +74,24 @@ components — Props types via the TS checker (names, types, optionality,
 defaults, JSDoc as docs; literal unions become selects; un-formable types
 degrade to a flagged raw field), plus slot detection — and pushes manifests.
 Opt-in by construction: the registry never advertises a component the CLI saw
-unmapped. Sync warns on drift in both directions (registry names missing from
-the map; prop changes that break existing usages, enumerated via the usage
-index).
+unmapped.
 
-The flow is one-directional: code → data by extraction, never data → code by
-sync — the CLI never writes to `wit.config` or the site repo. Manual manifests
-are **design-first components**: authorable immediately (forms work, usages
-index, sites render the fallback) with the unmapped-drift warning standing
-until the developer adds the implementation and map entry. The explicit
-reverse path is codegen, not sync: `wit components scaffold <name>` (v1.x)
-generates a typed stub from the manifest schema for the developer to commit.
+The registry is **fully sync-owned** and the flow strictly one-directional:
+code → data by extraction, never data → code — the CLI never writes to
+`wit.config` or the site repo, and the UI never writes to the registry (it
+reads it for the editor's component forms). Sync therefore *reconciles* the
+registry to the map: new components appear, changed props update, unmapped
+manifests are pruned — with loud warnings when a pruned or prop-changed
+component still has usages, enumerated via the usage index.
 
 ### Assertions
 
 | ID              | Sev.   | Assertion                                                          |
 | --------------- | ------ | ------------------------------------------------------------------ |
 | sync-map-source | MUST   | CLI sync extracts manifests only for components listed in the adapter map |
-| sync-one-way    | MUST   | Sync never writes to wit.config or any site source; closing registry→code gaps is explicit codegen |
-| sync-drift-warn | SHOULD | Sync warns on map↔registry drift and on prop changes breaking existing usages |
+| sync-one-way    | MUST   | Sync never writes to wit.config or any site source; the registry is written only by sync |
+| sync-reconcile  | MUST   | Sync reconciles the registry to the map: additions, prop updates, and pruning of unmapped manifests |
+| sync-drift-warn | SHOULD | Sync warns when pruned or prop-changed components have existing usages, enumerating affected docs |
 
 ## Auth & limits
 

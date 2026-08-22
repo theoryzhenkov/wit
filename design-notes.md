@@ -12,6 +12,23 @@ depends:
 Interview log. Append dated entries when a decision is made; record rejected
 alternatives so they are not relitigated by accident.
 
+## 2026-08-22 — registry is sync-owned: manual UI manifests removed
+
+Supersedes parts of the two entries below. Since every component requires a
+repo implementation regardless, manual manifest editing in the UI was a
+parallel authoring path maintaining machinery (the `source: sync|manual`
+field, overlays, a manifest management screen, the `scaffold` codegen
+command) whose payoff code already provides — labels and docs live in JSDoc
+and are extracted by sync. Removed all of it: the registry is written only by
+`wit components sync`, the UI only reads it (slash-menu forms). Sync upgraded
+from warn-only to full reconciliation (additions, prop updates, pruning of
+unmapped manifests) with warnings when pruned/changed components still have
+usages. The design-first workflow is gone as a feature — hand-typed
+directives before a component exists remain possible, since directives are
+just text. Noted for P2: hosted-garden built-in components will be
+system-provided manifests, a separate mechanism, not a reason to resurrect
+user-manual editing.
+
 ## 2026-08-22 — components: directives, registry, sync
 
 Raised post-interview: theor.net's files are .mdx with custom Astro

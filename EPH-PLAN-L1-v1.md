@@ -36,18 +36,18 @@ derived indexes correct (model assertions covered by tests).
 
 Collection algebra (rule ∪ pins − excludes, ordering); the query grammar over
 the seven nouns with filters/fts/includes/order/cursors; ETags; per-vault SSE
-feed; scoped API keys (read | write) with visibility enforcement; component
-registry CRUD (manifests, overlays). Exit: platform grammar assertions
-covered; a public doc is readable by a read key, a private one provably is
-not; a write key can manage the registry.
+feed; scoped API keys (read | write) with visibility enforcement; the
+registry push endpoint (sync's write target). Exit: platform grammar
+assertions covered; a public doc is readable by a read key, a private one
+provably is not; a write key can push the registry.
 
 ## P3 — editor
 
 Vite/React SPA at the comfortable tier: doc list, CodeMirror + Yjs editing,
 create/rename/delete, visibility toggle, collections UI, search, drag-drop
-uploads, component slash-menu with schema-driven insert/edit forms, manifest
-management UI (manual manifests + overlays), directive diagnostics. Exit:
-daily-drivable for real writing, components included.
+uploads, component slash-menu with schema-driven insert/edit forms (reading
+the sync-owned registry), directive diagnostics. Exit: daily-drivable for
+real writing, components included.
 
 ## P4 — SDK, adapter, cutover
 

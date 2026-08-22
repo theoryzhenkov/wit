@@ -24,9 +24,9 @@ proof is the dogfood cutover of theor.net.
   collections UI (create, pin, order, edit rules), search, drag-drop image
   upload, and component insert/edit via schema-driven forms (slash-menu from
   the registry). Frontmatter edited as raw text in the document.
-- Component system: markdown directives as the invocation format, vault
-  component registry (synced + manual manifests with overlays), the
-  `wit components sync` CLI, and the directive usage index.
+- Component system: markdown directives as the invocation format, the
+  sync-owned vault component registry (written only by `wit components sync`),
+  and the directive usage index.
 - Content API (query grammar over seven nouns), SSE + ETag liveness,
   vault-scoped API keys (read | write).
 - `@wit/client` SDK + Astro adapter (markdown + directive→component
@@ -41,7 +41,9 @@ proof is the dogfood cutover of theor.net.
 - Vault/file-sync daemon and Obsidian plugin (v1.x, first follow-up).
 - Collection nesting; per-collection slugs; rendered-HTML endpoint; consumer
   webhooks; GraphQL facade; frontmatter form UI; graph view in the editor;
-  version-history UI. (MDX storage is out permanently, not deferred —
+  version-history UI. Manual manifest editing in the UI is out permanently —
+  the registry is sync-owned, since a component requires a repo implementation
+  regardless. (MDX storage is likewise out permanently, not deferred —
   directives are the component format; see docs/model/L1-model#content-is-data.)
 - Hosted-garden face (P2 platform rung); commons/thingspace (P3).
 
