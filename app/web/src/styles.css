@@ -1,16 +1,11 @@
-:root {
-  --bg: #fbfaf8;
-  --panel: #ffffff;
-  --ink: #1f1d1a;
-  --muted: #7a746b;
-  --line: #e7e2da;
-  --accent: #2e5e46;
-  --accent-soft: #e8f0eb;
-  --warn: #9a5b00;
-  --warn-soft: #fdf3e3;
-  --danger: #a33b2e;
-  --radius: 8px;
-  font-family: -apple-system, "Segoe UI", "Inter", system-ui, sans-serif;
+@import "./tokens.css";
+
+/* Legacy aliases — screens migrate to raw tokens during the refit. */
+:root, [data-theme="dark"] {
+  --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent);
+  --warn-soft: color-mix(in oklab, var(--warn) 12%, transparent);
+  --radius: var(--r-md);
+  font-family: var(--font-ui);
 }
 
 * { box-sizing: border-box; }
@@ -19,7 +14,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-size: 15px;
+  font-size: var(--text-md);
   line-height: 1.5;
 }
 
@@ -33,7 +28,7 @@ button {
   cursor: pointer;
 }
 button:hover { border-color: var(--accent); }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 button.danger { color: var(--danger); }
 button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
 button.ghost:hover { color: var(--ink); }
@@ -117,8 +112,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft
 
 .vis-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
 .vis-private { background: var(--line); }
-.vis-unlisted { background: var(--warn); }
-.vis-public { background: var(--accent); }
+.vis-unlisted { background: var(--status-unlisted); }
+.vis-public { background: var(--status-public); }
 
 .main { overflow-y: auto; display: flex; flex-direction: column; }
 .main .empty { margin: auto; color: var(--muted); }
@@ -149,7 +144,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft
 .editor-host .cm-editor { flex: 1; min-height: 100%; }
 .editor-host .cm-editor.cm-focused { outline: none; }
 .cm-editor { font-size: 15px; }
-.cm-content { font-family: ui-monospace, "SF Mono", Menlo, monospace; max-width: 74ch; padding: 20px; }
+.cm-content { font-family: var(--font-ui); font-size: var(--text-lg); max-width: 68ch; padding: 24px; }
 .cm-editor .cm-line { line-height: 1.65; }
 .cm-placeholder { color: var(--muted); }
 
@@ -216,4 +211,4 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft
 .member-list .row-actions button { padding: 2px 8px; font-size: 12px; }
 
 .error-line { color: var(--danger); font-size: 13px; }
-.ok-line { color: var(--accent); font-size: 13px; }
+.ok-line { color: var(--status-public); font-size: 13px; }

@@ -1,0 +1,127 @@
+/* wit design tokens — the single source for color, type, space, motion.
+   Linear lineage: neutral ramp + one accent, dense type, small radii,
+   motion under 150ms. Light and dark are both first-class. */
+
+:root {
+  color-scheme: light dark;
+
+  /* neutral ramp (light) */
+  --gray-0: #fcfcfc;
+  --gray-1: #f7f7f6;
+  --gray-2: #efefed;
+  --gray-3: #e3e3e0;
+  --gray-4: #c9c9c5;
+  --gray-5: #8f8f8a;
+  --gray-6: #5f5f5b;
+  --gray-7: #2e2e2c;
+  --gray-8: #1a1a19;
+
+  /* monochrome interactive: the accent IS ink; color only signals state */
+  --accent: var(--gray-8);
+  --accent-hover: var(--gray-7);
+  --accent-soft: color-mix(in oklab, var(--gray-8) 8%, transparent);
+  --accent-text: var(--gray-8);
+  --status-public: #3d8a63;
+  --status-unlisted: #b98a2f;
+
+  --warn: #9a6b1a;
+  --warn-soft: color-mix(in oklab, var(--warn) 12%, transparent);
+  --danger: #b0433a;
+  --danger-soft: color-mix(in oklab, var(--danger) 10%, transparent);
+
+  /* semantic surfaces */
+  --bg: var(--gray-1);
+  --panel: #ffffff;
+  --raised: #ffffff;
+  --ink: var(--gray-8);
+  --muted: var(--gray-5);
+  --faint: var(--gray-4);
+  --line: var(--gray-3);
+  --line-soft: var(--gray-2);
+  --hover: color-mix(in oklab, var(--gray-8) 4%, transparent);
+  --active: color-mix(in oklab, var(--gray-8) 7%, transparent);
+
+  /* type — dense, quiet */
+  --font-ui: -apple-system, "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --text-xs: 11px;
+  --text-sm: 12.5px;
+  --text-md: 13.5px; /* UI default */
+  --text-lg: 15px;   /* editor body */
+  --text-xl: 20px;
+  --leading: 1.45;
+  --leading-editor: 1.65;
+
+  /* space — 4px grid */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* shape + elevation — small radii, flat light shadows */
+  --r-sm: 5px;
+  --r-md: 7px;
+  --r-lg: 10px;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-2: 0 4px 16px rgb(0 0 0 / 0.10), 0 1px 3px rgb(0 0 0 / 0.06);
+
+  /* motion budget — nothing slower than this, ever */
+  --t-fast: 60ms ease-out;
+  --t-med: 120ms ease-out;
+
+  --focus-ring: 0 0 0 2px color-mix(in oklab, var(--gray-8) 25%, transparent);
+}
+
+[data-theme="dark"] {
+  --gray-0: #0e0e10;
+  --gray-1: #131315;
+  --gray-2: #1a1a1d;
+  --gray-3: #26262a;
+  --gray-4: #3b3b40;
+  --gray-5: #8a8a90;
+  --gray-6: #b4b4ba;
+  --gray-7: #e2e2e6;
+  --gray-8: #f4f4f6;
+
+  --accent: var(--gray-8);
+  --accent-hover: var(--gray-7);
+  --accent-text: var(--gray-8);
+  --status-public: #4da97c;
+  --status-unlisted: #cfa24a;
+
+  --bg: var(--gray-0);
+  --panel: var(--gray-1);
+  --raised: var(--gray-2);
+  --hover: color-mix(in oklab, #ffffff 5%, transparent);
+  --active: color-mix(in oklab, #ffffff 8%, transparent);
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 6px 20px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --gray-0: #0e0e10;
+    --gray-1: #131315;
+    --gray-2: #1a1a1d;
+    --gray-3: #26262a;
+    --gray-4: #3b3b40;
+    --gray-5: #8a8a90;
+    --gray-6: #b4b4ba;
+    --gray-7: #e2e2e6;
+    --gray-8: #f4f4f6;
+    --accent: var(--gray-8);
+    --accent-hover: var(--gray-7);
+    --accent-text: var(--gray-8);
+    --status-public: #4da97c;
+    --status-unlisted: #cfa24a;
+    --bg: var(--gray-0);
+    --panel: var(--gray-1);
+    --raised: var(--gray-2);
+    --hover: color-mix(in oklab, #ffffff 5%, transparent);
+    --active: color-mix(in oklab, #ffffff 8%, transparent);
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 6px 20px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+  }
+}
