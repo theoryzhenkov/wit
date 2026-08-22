@@ -5,6 +5,9 @@ modified: 2026-08-22
 reviewed: 2026-08-22
 dependents:
   - path: design-notes
+  - path: docs/model/L1-model
+  - path: docs/platform/L1-platform
+  - path: docs/product/L1-product
 ---
 
 # Wit — Vision

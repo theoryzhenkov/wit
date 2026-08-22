@@ -5,6 +5,10 @@ modified: 2026-08-22
 reviewed: 2026-08-22
 dependents:
   - path: docs/L0-vision
+  - path: docs/model/L1-model
+  - path: docs/platform/L1-platform
+  - path: docs/product/L1-product
+  - path: EPH-PLAN-L1-v1
   - path: design-notes
 ---
 
@@ -23,4 +27,8 @@ hidden lineage is both knowledge and the agora.
 First deployment: `wit.theor.net`, feeding the garden at theor.net.
 
 - [docs/L0-vision.md](docs/L0-vision.md) — why wit exists, the shape, the ladder
+- [docs/model/L1-model.md](docs/model/L1-model.md) — vaults, docs, collections, edges, visibility: the invariants
+- [docs/platform/L1-platform.md](docs/platform/L1-platform.md) — stack, query-grammar API, liveness, auth
+- [docs/product/L1-product.md](docs/product/L1-product.md) — v1 scope and acceptance bar
+- [EPH-PLAN-L1-v1.md](EPH-PLAN-L1-v1.md) — the six-phase build plan
 - [design-notes.md](design-notes.md) — dated log of design decisions and their rationale
