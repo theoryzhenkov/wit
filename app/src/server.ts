@@ -7,6 +7,10 @@ import { maybeUpgradeDocSocket, relayWebsocket } from "./lib/yjs/relay";
 export function startServer(port: number) {
   return Bun.serve({
     port,
+    // Request bodies are caller-controlled input: cap above the largest
+    // legitimate payload (10 MB asset uploads) and let the per-route
+    // checks handle the rest. spec: docs/platform/L1-platform#input-caps
+    maxRequestBodySize: 16_000_000,
     async fetch(req, server) {
       const upgrade = await maybeUpgradeDocSocket(req, server);
       if (upgrade !== null) return upgrade;
