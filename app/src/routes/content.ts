@@ -2,7 +2,9 @@ import { createHash } from "node:crypto";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import type { Context } from "hono";
-import { subscribe } from "../lib/bus";
+import { eq, inArray, and } from "drizzle-orm";
+import { subscribe, type Change } from "../lib/bus";
+import { db, schema } from "../lib/db";
 import {
   GrammarError,
   parseQuery,
@@ -95,7 +97,8 @@ content.get("/:vaultId/membership", async (c) => {
 // spec: docs/model/L1-model#asset-visibility
 content.get("/:vaultId/assets/raw/*", async (c) => {
   const principal = c.get("principal");
-  const path = c.req.path.split("/assets/raw/")[1] ?? "";
+  const marker = "/assets/raw/";
+  const path = c.req.path.slice(c.req.path.indexOf(marker) + marker.length);
   const asset = await getAsset(principal.vaultId, decodeURIComponent(path));
   if (!asset) return c.json({ error: "not found" }, 404);
   if (principal.kind === "read" && asset.row.visibility === "private") {
@@ -108,6 +111,28 @@ content.get("/:vaultId/assets/raw/*", async (c) => {
   });
 });
 
+/** Read keys never see private ids, even as invalidation hints; the
+ *  event still fires (possibly with empty ids) so caches always drop.
+ *  spec: docs/model/L1-model#private-never-served */
+async function fenceChangeForRead(change: Change): Promise<Change> {
+  if (change.ids.length === 0) return change;
+  if (change.noun === "docs" || change.noun === "edges" || change.noun === "usages") {
+    const visible = await db
+      .select({ id: schema.docs.id })
+      .from(schema.docs)
+      .where(and(inArray(schema.docs.id, change.ids), eq(schema.docs.visibility, "public")));
+    return { ...change, ids: visible.map((r) => r.id) };
+  }
+  if (change.noun === "assets") {
+    const visible = await db
+      .select({ id: schema.assets.id })
+      .from(schema.assets)
+      .where(and(inArray(schema.assets.id, change.ids), eq(schema.assets.visibility, "public")));
+    return { ...change, ids: visible.map((r) => r.id) };
+  }
+  return change; // collections/membership/components are not visibility-tiered
+}
+
 // Per-vault SSE change feed: (noun, ids, timestamp) after each save.
 // spec: docs/platform/L1-platform#sse-feed
 content.get("/:vaultId/events", async (c) => {
@@ -116,31 +141,40 @@ content.get("/:vaultId/events", async (c) => {
     let alive = true;
     let wake: (() => void) | null = null;
     const unsubscribe = subscribe(principal.vaultId, (change) => {
-      void stream.writeSSE({ event: "change", data: JSON.stringify(change) });
+      void (async () => {
+        const fenced =
+          principal.kind === "read" ? await fenceChangeForRead(change) : change;
+        await stream.writeSSE({ event: "change", data: JSON.stringify(fenced) });
+      })().catch(() => {});
     });
     stream.onAbort(() => {
       alive = false;
-      unsubscribe();
       wake?.();
     });
-    await stream.writeSSE({ event: "hello", data: JSON.stringify({ ts: Date.now() }) });
-    // Heartbeat with a teardown-aware sleep: an aborted feed leaves no
-    // timer behind.
-    while (alive) {
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, 25_000);
-        wake = () => {
-          clearTimeout(timer);
-          resolve();
-        };
-      });
-      if (alive) await stream.writeSSE({ event: "ping", data: String(Date.now()) });
+    try {
+      await stream.writeSSE({ event: "hello", data: JSON.stringify({ ts: Date.now() }) });
+      // Heartbeat with a teardown-aware sleep: an aborted feed leaves no
+      // timer behind.
+      while (alive) {
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(resolve, 25_000);
+          wake = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+        });
+        if (alive) await stream.writeSSE({ event: "ping", data: String(Date.now()) });
+      }
+    } finally {
+      unsubscribe();
     }
   });
 });
 
 content.get("/:vaultId/:noun", async (c) => {
-  const handler = NOUNS[c.req.param("noun")];
+  const noun = c.req.param("noun");
+  // hasOwn: "constructor"/"toString" must not resolve via the prototype.
+  const handler = Object.hasOwn(NOUNS, noun) ? NOUNS[noun] : undefined;
   if (!handler) return c.json({ error: "unknown noun" }, 404);
   try {
     const q = parseQuery(new URL(c.req.url).searchParams);

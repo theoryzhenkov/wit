@@ -270,6 +270,9 @@ describe("sse feed", () => {
   it("emits (noun, ids, ts) within a second of a save", async () => {
     const doc = await createDoc(vaultId, { slug: "sse-doc", text: "before" });
     if ("error" in doc) throw new Error(doc.error);
+    // The feed is fenced for read keys: only public ids are visible.
+    // spec: docs/model/L1-model#private-never-served
+    await setVisibility(doc.id, "public");
 
     const controller = new AbortController();
     const res = await fetch(`http://localhost:${server.port}/api/content/${vaultId}/events`, {
@@ -281,13 +284,17 @@ describe("sse feed", () => {
     const decoder = new TextDecoder();
     let buffer = "";
 
+    // Fencing runs per-event async, so noun order isn't guaranteed —
+    // wait for the docs event specifically.
     const readUntilChange = (async () => {
       for (;;) {
         const { value, done } = await reader.read();
         if (done) throw new Error("stream ended");
         buffer += decoder.decode(value, { stream: true });
-        const match = buffer.match(/event: change\ndata: (.+)\n/);
-        if (match) return JSON.parse(match[1]!) as { noun: string; ids: string[]; ts: number };
+        for (const m of buffer.matchAll(/event: change\ndata: (.+)\n/g)) {
+          const change = JSON.parse(m[1]!) as { noun: string; ids: string[]; ts: number };
+          if (change.noun === "docs") return change;
+        }
       }
     })();
 

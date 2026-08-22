@@ -116,6 +116,9 @@ describe("the grammar", () => {
     }
     expect((await get("backlinks", { key: writeKey })).status).toBe(404);
     expect((await get("search", { key: writeKey })).status).toBe(404);
+    // Prototype members must not resolve as nouns.
+    expect((await get("constructor", { key: writeKey })).status).toBe(404);
+    expect((await get("toString", { key: writeKey })).status).toBe(404);
   });
 
   // spec: docs/platform/L1-platform#grammar-indexed

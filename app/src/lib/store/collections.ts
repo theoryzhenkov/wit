@@ -51,7 +51,8 @@ export function validateRule(input: unknown): Rule | null {
 
 export function validateSortKey(input: string): boolean {
   const m = input.match(/^([a-z]+)\.(asc|desc)$/);
-  return !!m && m[1]! in SORT_KEYS;
+  // hasOwn: "constructor.asc" must not validate via the prototype.
+  return !!m && Object.hasOwn(SORT_KEYS, m[1]!);
 }
 
 function compileRule(rule: Rule): SQL[] {
@@ -250,7 +251,9 @@ export async function effectiveMembership(
   if (rule) {
     const sortRaw = collection.sortKey ?? DEFAULT_SORT;
     const m = sortRaw.match(/^([a-z]+)\.(asc|desc)$/);
-    const sortCol = SORT_KEYS[(m?.[1] ?? "updated") as keyof typeof SORT_KEYS];
+    const sortKeyName =
+      m && Object.hasOwn(SORT_KEYS, m[1]!) ? (m[1] as keyof typeof SORT_KEYS) : "updated";
+    const sortCol = SORT_KEYS[sortKeyName];
     const sortDir = m?.[2] === "asc" ? asc : desc;
 
     // Excludes and already-pinned docs drop out of the rule matches.

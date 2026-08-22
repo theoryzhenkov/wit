@@ -12,12 +12,20 @@ import { requireWrite, withPrincipal, type PrincipalEnv } from "./principal";
 
 const VISIBILITIES = new Set(["private", "unlisted", "public"]);
 
+// slice past the FIRST route marker: split() would truncate any asset
+// path that itself contains an /assets/ segment.
+function assetPath(reqPath: string): string {
+  const marker = "/assets/";
+  const at = reqPath.indexOf(marker);
+  return at === -1 ? "" : reqPath.slice(at + marker.length);
+}
+
 export const assets = new Hono<PrincipalEnv>();
 
 assets.use("*", withPrincipal, requireWrite);
 
 assets.put("/*", async (c) => {
-  const path = c.req.path.split("/assets/")[1] ?? "";
+  const path = assetPath(c.req.path);
   const length = Number(c.req.header("content-length") ?? "0");
   if (length > MAX_UPLOAD_BYTES) {
     // spec: docs/platform/L1-platform#input-caps
@@ -38,7 +46,7 @@ assets.put("/*", async (c) => {
 });
 
 assets.patch("/*", async (c) => {
-  const path = c.req.path.split("/assets/")[1] ?? "";
+  const path = assetPath(c.req.path);
   const body = await c.req.json().catch(() => null);
   if (!VISIBILITIES.has(body?.visibility)) return c.json({ error: "invalid visibility" }, 400);
   const ok = await setAssetVisibility(
@@ -51,7 +59,7 @@ assets.patch("/*", async (c) => {
 });
 
 assets.delete("/*", async (c) => {
-  const path = c.req.path.split("/assets/")[1] ?? "";
+  const path = assetPath(c.req.path);
   const ok = await deleteAsset(c.get("principal").vaultId, decodeURIComponent(path));
   if (!ok) return c.json({ error: "not found" }, 404);
   return c.json({ ok: true });

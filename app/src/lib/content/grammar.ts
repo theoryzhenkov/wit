@@ -146,7 +146,11 @@ export async function queryDocs(principal: Principal, q: ParsedQuery): Promise<D
       if (op === "contains") where.push(sql`${schema.docs.tags} @> array[${value}]::text[]`);
       else throw new GrammarError(`op ${op} not supported on tags (use contains)`);
     } else if (field === "visibility") {
-      if (principal.kind === "read") throw new GrammarError("visibility filter requires write access");
+      // Read keys may narrow to public (a no-op under their fence) so
+      // clients can send one uniform query shape; anything else leaks.
+      if (principal.kind === "read" && !(op === "eq" && value === "public")) {
+        throw new GrammarError("visibility filter requires write access");
+      }
       if (op === "eq") where.push(sql`${schema.docs.visibility} = ${value}`);
       else if (op === "in")
         where.push(sql`${schema.docs.visibility} = any(${listValues(value)}::visibility[])`);
@@ -172,8 +176,10 @@ export async function queryDocs(principal: Principal, q: ParsedQuery): Promise<D
   where.push(docVisibilityFence(principal, q));
 
   const orderKey = (q.order?.key ?? "updated") as keyof typeof DOC_ORDER_KEYS;
+  if (!Object.hasOwn(DOC_ORDER_KEYS, orderKey)) {
+    throw new GrammarError(`unknown order key ${JSON.stringify(q.order?.key)}`);
+  }
   const orderCol = DOC_ORDER_KEYS[orderKey];
-  if (!orderCol) throw new GrammarError(`unknown order key ${JSON.stringify(q.order?.key)}`);
   const dir = q.order?.dir ?? "desc";
 
   if (q.cursor) {
@@ -289,23 +295,30 @@ export async function queryCollections(principal: Principal, q: ParsedQuery) {
 
 export async function queryEdges(principal: Principal, q: ParsedQuery) {
   const where: SQL[] = [eq(schema.edges.vaultId, principal.vaultId)];
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  const KINDS = ["wikilink", "relation"] as const;
   for (const { field, op, value } of q.conds) {
-    const col =
-      field === "source"
-        ? schema.edges.sourceDocId
-        : field === "target"
-          ? schema.edges.targetDocId
-          : field === "slug"
-            ? schema.edges.targetSlug
-            : field === "kind"
-              ? schema.edges.kind
-              : field === "rel"
-                ? schema.edges.rel
-                : null;
-    if (!col) throw new GrammarError(`unknown edges field ${JSON.stringify(field)}`);
-    if (op === "eq") where.push(sql`${col} = ${value}`);
-    else if (op === "in") where.push(sql`${col} = any(${listValues(value)})`);
-    else throw new GrammarError(`op ${op} not supported on edges.${field}`);
+    if (op !== "eq" && op !== "in") {
+      throw new GrammarError(`op ${op} not supported on edges.${field}`);
+    }
+    const values = op === "in" ? listValues(value) : [value];
+    if (field === "source" || field === "target") {
+      if (!values.every((v) => UUID_RE.test(v))) throw new GrammarError(`${field} must be a uuid`);
+      const col = field === "source" ? schema.edges.sourceDocId : schema.edges.targetDocId;
+      where.push(inArray(col, values));
+    } else if (field === "slug") {
+      where.push(inArray(schema.edges.targetSlug, values));
+    } else if (field === "kind") {
+      const kinds = values.filter((v): v is (typeof KINDS)[number] =>
+        (KINDS as readonly string[]).includes(v),
+      );
+      if (kinds.length !== values.length) throw new GrammarError("kind must be wikilink|relation");
+      where.push(inArray(schema.edges.kind, kinds));
+    } else if (field === "rel") {
+      where.push(inArray(schema.edges.rel, values));
+    } else {
+      throw new GrammarError(`unknown edges field ${JSON.stringify(field)}`);
+    }
   }
   if (q.fts || q.order) throw new GrammarError("edges support neither fts nor order");
 
@@ -436,8 +449,11 @@ export async function queryUsages(principal: Principal, q: ParsedQuery) {
       else if (op === "in") where.push(inArray(schema.componentUsages.name, listValues(value)));
       else throw new GrammarError(`op ${op} not supported on name`);
     } else if (field === "doc") {
-      if (op === "eq") where.push(sql`${schema.componentUsages.docId} = ${value}`);
-      else throw new GrammarError(`op ${op} not supported on doc`);
+      if (op !== "eq") throw new GrammarError(`op ${op} not supported on doc`);
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value)) {
+        throw new GrammarError("doc must be a uuid");
+      }
+      where.push(sql`${schema.componentUsages.docId} = ${value}`);
     } else throw new GrammarError(`unknown usages field ${JSON.stringify(field)}`);
   }
   if (q.fts || q.order) throw new GrammarError("usages support neither fts nor order");

@@ -31,7 +31,9 @@ export function subscribe(vaultId: string, listener: Listener): () => void {
   set.add(listener);
   return () => {
     set.delete(listener);
-    if (set.size === 0) listeners.delete(vaultId);
+    // Only remove the map entry if it is still OUR set — a stale
+    // unsubscribe must never orphan a newer subscriber's set.
+    if (set.size === 0 && listeners.get(vaultId) === set) listeners.delete(vaultId);
   };
 }
 
