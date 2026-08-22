@@ -8,7 +8,7 @@ import { env } from "../env";
 // process. A dedicated single-use connection: the migrator must not share
 // the app pool's prepared-statement cache across DDL.
 export async function migrateDb(): Promise<void> {
-  const client = postgres(env.databaseUrl, { max: 1 });
+  const client = postgres(env.databaseUrl, { max: 1, onnotice: () => {} });
   try {
     await migrate(drizzle(client), {
       migrationsFolder: new URL("../../../drizzle", import.meta.url).pathname,

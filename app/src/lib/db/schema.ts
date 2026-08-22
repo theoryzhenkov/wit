@@ -2,6 +2,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   index,
   integer,
   jsonb,
@@ -155,6 +156,31 @@ export const docs = pgTable(
     uniqueIndex("docs_vault_slug_idx").on(t.vaultId, t.slug),
     check("docs_slug_kebab", sql`${t.slug} ~ '${sql.raw(SLUG_RE)}'`),
   ],
+);
+
+// ── Yjs update log ────────────────────────────────────────────────────
+// Append-only CRDT updates per doc, periodically compacted into one
+// merged row. The doc's markdown `text` is derived from the merged
+// state on save and never diverges from it.
+// spec: docs/platform/L1-platform#yjs-persist
+
+const bytea = customType<{ data: Uint8Array }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+export const docUpdates = pgTable(
+  "doc_updates",
+  {
+    seq: bigint("seq", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    docId: uuid("doc_id")
+      .notNull()
+      .references(() => docs.id, { onDelete: "cascade" }),
+    update: bytea("update").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("doc_updates_doc_idx").on(t.docId, t.seq)],
 );
 
 // ── Collections ───────────────────────────────────────────────────────
