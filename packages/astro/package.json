@@ -1,0 +1,19 @@
+{
+  "name": "@wit/astro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@wit/client": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "@types/bun": "^1.3.14"
+  }
+}
