@@ -1,13 +1,10 @@
-import { app } from "./app";
 import { migrateDb } from "./lib/db/migrate";
 import { assertProductionEnv, env } from "./lib/env";
+import { startServer } from "./server";
 
 assertProductionEnv();
 await migrateDb();
 
-const server = Bun.serve({
-  port: env.port,
-  fetch: app.fetch,
-});
+const server = startServer(env.port);
 
 console.log(`wit listening on ${server.url}`);
