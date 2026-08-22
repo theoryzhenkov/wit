@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   app:
@@ -44,7 +45,7 @@ jobs:
   # webhook step makes tars redeploy within seconds, with 30min polling as
   # fallback.
   image:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: app
     permissions:
       contents: read
