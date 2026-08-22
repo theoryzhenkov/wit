@@ -15,6 +15,13 @@
       "when": 1787397497000,
       "tag": "0001_doc_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787398159000,
+      "tag": "0002_content",
+      "breakpoints": true
     }
   ]
 }

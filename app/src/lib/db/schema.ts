@@ -39,6 +39,18 @@ export const apiKeyScope = pgEnum("api_key_scope", ["read", "write"]);
 // form unstorable. spec: docs/model/L1-model#slug-unique
 const SLUG_RE = "^[a-z0-9]+(-[a-z0-9]+)*$";
 
+const bytea = customType<{ data: Uint8Array }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
+
 // ── better-auth core tables ───────────────────────────────────────────
 
 export const users = pgTable("users", {
@@ -146,6 +158,9 @@ export const docs = pgTable(
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
     // Reserved for the file-sync daemon (v1.x); unused by the web flow.
     path: text("path"),
+    // Generated always (0002): title + text + tags, indexed on save by
+    // construction. spec: docs/platform/L1-platform#fts-operator
+    searchVec: tsvector("search_vec"),
     // spec: docs/model/L1-model#doc-private-default
     visibility: visibility("visibility").notNull().default("private"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -163,12 +178,6 @@ export const docs = pgTable(
 // merged row. The doc's markdown `text` is derived from the merged
 // state on save and never diverges from it.
 // spec: docs/platform/L1-platform#yjs-persist
-
-const bytea = customType<{ data: Uint8Array }>({
-  dataType() {
-    return "bytea";
-  },
-});
 
 export const docUpdates = pgTable(
   "doc_updates",
