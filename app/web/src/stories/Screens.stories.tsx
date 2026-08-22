@@ -23,39 +23,43 @@ const Sidebar = () => (
       <Button variant="ghost" size="sm">+</Button>
     </header>
     <div className="search"><Input placeholder="search…" style={{ width: "100%" }} /></div>
-    <div className="section"><span>docs</span></div>
+    <div className="section"><span>recent</span></div>
     <div style={{ padding: "0 var(--s2)" }}>
-      {DOCS.map((d) => (
+      {DOCS.slice(0, 3).map((d) => (
         <ListRow key={d.slug} active={d.active}
           leading={<span className={`vis-dot vis-${d.vis}`} />}
-          title={d.title} meta={d.slug} />
+          title={d.title} />
       ))}
     </div>
     <div className="section"><span>collections</span><Button variant="ghost" size="sm">+</Button></div>
-    <div style={{ padding: "0 var(--s2) var(--s3)" }}>
-      <ListRow title="essays" meta="rule" />
-      <ListRow title="reading" meta="pins" />
+    <div style={{ padding: "0 var(--s2)" }}>
+      <ListRow title="essays" meta="4" />
+      <div style={{ paddingLeft: "var(--s4)" }}>
+        <ListRow leading={<span className="vis-dot vis-public" />} title="The Garden" active />
+        <ListRow leading={<span className="vis-dot vis-public" />} title="Agentic coding" />
+        <ListRow leading={<span className="vis-dot vis-private" />} title="Draft riff on directives" />
+      </div>
+      <ListRow title="reading" meta="7" />
+      <ListRow title="stubs" meta="12" />
     </div>
-    <div style={{ marginTop: "auto", padding: "var(--s2) var(--s3)", color: "var(--faint)", fontSize: "var(--text-xs)", display: "flex", gap: 6, alignItems: "center" }}>
-      <Kbd>⌘K</Kbd> commands · <Kbd>⌘\</Kbd> sidebar
+    <div style={{ padding: "0 var(--s2) var(--s3)", marginTop: "var(--s2)" }}>
+      <ListRow title="All docs" meta="26" />
     </div>
   </nav>
 );
 
-/* Target toolbar: quiet, one row, menus not selects. */
-const Toolbar = ({ vis = "public", saved = true }: { vis?: string; saved?: boolean }) => (
+/* Target toolbar: nearly nothing. Breadcrumb left; visibility chip and
+   overflow right. Rename/slug, component insert, delete live in ⋯ and
+   in-editor triggers (/ and [[). Save state is silent — errors toast. */
+const Toolbar = ({ vis = "public" }: { vis?: string }) => (
   <div className="doc-toolbar" style={{ flexWrap: "nowrap" }}>
-    <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", color: "var(--muted)" }}>
-      garden-hub
+    <span style={{ fontSize: "var(--text-sm)", color: "var(--muted)" }}>
+      essays <span style={{ color: "var(--faint)" }}>/</span> The Garden
     </span>
+    <div className="spacer" />
     <Button size="sm" variant="ghost">
       <span className={`vis-dot vis-${vis}`} /> {vis} ▾
     </Button>
-    <Button size="sm" variant="ghost">+ component</Button>
-    <div className="spacer" />
-    <span style={{ color: "var(--faint)", fontSize: "var(--text-xs)" }}>
-      {saved ? "saved" : "saving…"} · 1 peer
-    </span>
     <Button size="sm" variant="ghost">⋯</Button>
   </div>
 );
@@ -90,7 +94,7 @@ export const EditorFocusMode: StoryObj = {
   render: () => (
     <div className="shell" data-collapsed="true" style={{ height: "100vh" }}>
       <main className="main">
-        <Toolbar saved={false} />
+        <Toolbar />
         <Prose />
         <div className="diagnostics"><span>⚠ ::hero is missing required prop "src"</span></div>
       </main>
