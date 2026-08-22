@@ -12,6 +12,37 @@ depends:
 Interview log. Append dated entries when a decision is made; record rejected
 alternatives so they are not relitigated by accident.
 
+## 2026-08-22 — P2 implementation decisions (content API)
+
+- **Grammar syntax is PostgREST-shaped query params** (`?slug=eq.x`,
+  `?tags=contains.garden`, `fm.<key>=eq.<json|string>`, `fts=…`,
+  `order=<key>.<dir>`, keyset `cursor`). Rejected a JSON query param:
+  plain params keep GETs cache/CDN-legible, which the ETag story exists
+  for. Unknown fields/ops are 400s, never scans (`grammar-indexed`);
+  `prefix` compiles to a btree range, valid for the normalized ASCII
+  slug/path charsets.
+- **Strong ETags are content hashes** (sha-256 of the exact response
+  bytes) rather than a vault version counter — always correct, no
+  invalidation bookkeeping; the saved work is bytes, not compute, which
+  is what conditional GETs promise.
+- **Read-key unlisted semantics**: `slug=eq/in` filters (without `fts`)
+  may return unlisted docs — that is the "direct fetch"; every other
+  shape is a listing and stays public-only. Same rule for assets
+  (`path=eq` vs listings). Edges/usages are fenced by *source* doc
+  visibility: a public doc's outgoing links are already in its body, a
+  private doc's existence never leaves the API.
+- **SSE feed emits ids to every principal** (including read keys, and
+  for private docs): ids are opaque invalidation tokens, and a doc going
+  private *must* invalidate consumer caches to honor
+  `private-never-served` on the subsequent refetch. Noted as a
+  deliberate reading of that assertion.
+- **Membership pagination is an offset cursor** into the algebra-defined
+  order (pins, then rule matches) — keyset doesn't compose across the
+  pin/rule seam; collections are curated views with bounded size.
+- **Collection rules are validated at write time** to the same indexed
+  filter set the grammar allows (tags contains, fm eq/exists, text fts);
+  a stored rule is always executable.
+
 ## 2026-08-22 — P1 implementation decisions (doc core)
 
 Interpretations made while implementing the model spec, recorded so the
